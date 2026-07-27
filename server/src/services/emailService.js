@@ -8,14 +8,18 @@ function getTransporter() {
     const user = process.env.GMAIL_USER?.trim();
     const pass = process.env.GMAIL_APP_PASSWORD?.trim();
 
+    console.log("GMAIL_USER:", user);
+    console.log("Password Exists:", !!pass);
+
     transporter = nodemailer.createTransport({
-      service:"Gmail",
-      port: 465,
-      secure: true, // Use TLS/SSL
+      service: "gmail",
       auth: {
         user,
         pass,
       },
+      connectionTimeout: 60000,
+      greetingTimeout: 60000,
+      socketTimeout: 60000,
     });
   }
 
@@ -24,6 +28,10 @@ function getTransporter() {
 
 export async function sendEmail({ to, subject, html, text }) {
   try {
+    // Verify SMTP connection
+    await getTransporter().verify();
+    console.log("✅ SMTP Connected");
+
     const info = await getTransporter().sendMail({
       from: config.emailFrom,
       to,
@@ -32,10 +40,10 @@ export async function sendEmail({ to, subject, html, text }) {
       text,
     });
 
-    console.log("✅ Email Sent successfully to:", to, info.messageId);
+    console.log("✅ Email sent:", info.messageId);
     return info;
   } catch (err) {
-    console.error("❌ Email Error dispatching to:", to, err.message);
+    console.error("❌ Email Error:", err);
     throw err;
   }
 }
