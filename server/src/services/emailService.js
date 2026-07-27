@@ -1,15 +1,17 @@
-import nodemailer from 'nodemailer';
-import { config } from '../config/env.js';
+import nodemailer from "nodemailer";
 
-let transporter = null;
+let transporter;
 
 function getTransporter() {
   if (!transporter) {
+    // Sanitize app password in case spaces were copied directly from Google
+    const appPassword = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, "");
+
     transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.GMAIL_USER,      // Your Gmail address
-        pass: process.env.GMAIL_APP_PASSWORD, // Gmail App Password
+        user: process.env.GMAIL_USER,
+        pass: appPassword, // Uses the cleaned password variable
       },
     });
   }
@@ -17,44 +19,56 @@ function getTransporter() {
   return transporter;
 }
 
-
 export async function sendEmail({ to, subject, html, text }) {
-  const from = config.emailFrom;
   try {
-    const info = await getTransporter().sendMail({ from, to, subject, html, text });
-    if (!config.smtpHost) {
-      console.log('[email:dev]', { to, subject, preview: text?.slice(0, 120) });
-    }
+    const transporter = getTransporter();
+
+    const info = await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to,
+      subject,
+      html,
+      text,
+    });
+
+    console.log("Email sent successfully:", info.messageId);
     return info;
   } catch (err) {
-    console.error('[email:error]', err);
+    console.error("Email delivery failed:", err);
+    throw err;
   }
 }
 
 export async function sendDrawResultsEmail(user, draw, winnings) {
   const won = winnings.length > 0;
+
   const subject = won
     ? `Congratulations! You won in the ${draw.periodKey} draw`
     : `Draw results for ${draw.periodKey}`;
 
   const winLines = winnings
-    .map((w) => `<li>${w.tier}-Match: ${(w.prizeAmount / 100).toFixed(2)} GBP</li>`)
-    .join('');
-
-  const html = `
-    <h2>Hi ${user.profile.firstName},</h2>
-    <p>The ${draw.periodKey} prize draw has been published.</p>
-    ${won
-      ? `<p><strong>You have winning matches!</strong></p><ul>${winLines}</ul>
-         <p>Please log in to upload your scorecard proof for verification.</p>`
-      : '<p>Better luck next month — keep logging your scores!</p>'}
-    <p><a href="${config.clientUrl}/dashboard">View your dashboard</a></p>
-  `;
+    .map(
+      (w) =>
+        `<li>${w.tier}-Match: ${(w.prizeAmount / 100).toFixed(2)} GBP</li>`
+    )
+    .join("");
 
   await sendEmail({
     to: user.email,
     subject,
-    html,
+    html: `
+      <h2>Hi ${user.profile?.firstName || "there"},</h2>
+
+      <p>The ${draw.periodKey} prize draw has been published.</p>
+
+      ${
+        won
+          ? `<p><strong>You have winning matches!</strong></p>
+             <ul>${winLines}</ul>
+             <p>Please log in to upload your scorecard proof for verification.</p>`
+          : `<p>Better luck next month — keep logging your scores!</p>`
+      }
+    `,
     text: subject,
   });
 }
@@ -62,47 +76,54 @@ export async function sendDrawResultsEmail(user, draw, winnings) {
 export async function sendWinnerAlertEmail(user, winner) {
   await sendEmail({
     to: user.email,
-    subject: `Action required: Upload proof for your ${winner.tier}-Match win`,
+    subject: `Upload proof for your ${winner.tier}-Match win`,
     html: `
-      <h2>Hi ${user.profile.firstName},</h2>
-      <p>You won ${(winner.prizeAmount / 100).toFixed(2)} GBP in the ${winner.tier}-Match tier.</p>
-      <p>Upload a screenshot of your scorecard to claim your prize.</p>
-      <p><a href="${config.clientUrl}/dashboard">Upload proof now</a></p>
+      <h2>Hi ${user.profile?.firstName || "there"},</h2>
+
+      <p>You won ${(winner.prizeAmount / 100).toFixed(2)} GBP.</p>
+
+      <p>Please upload your scorecard proof.</p>
     `,
-    text: `You won in the ${winner.tier}-Match tier. Upload proof at ${config.clientUrl}/dashboard`,
+    text: `You won ${winner.tier}-Match.`,
   });
 }
 
 export async function sendPasswordResetOtpEmail(user, otp) {
-  const subject = 'Your Fairway & Fund password reset code';
-  const html = `
-    <h2>Hi ${user.profile.firstName},</h2>
-    <p>Use the verification code below to reset your password. This code expires in 10 minutes.</p>
-    <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #059669;">${otp}</p>
-    <p>If you did not request a password reset, you can safely ignore this email.</p>
-    <p><a href="${config.clientUrl}/login">Return to sign in</a></p>
-  `;
-  const text = `Your password reset code is ${otp}. It expires in 10 minutes.`;
-
   await sendEmail({
     to: user.email,
-    subject,
-    html,
-    text,
+    subject: "Password Reset OTP",
+    html: `
+      <h2>Hello ${user.profile?.firstName || "there"},</h2>
+
+      <p>Your OTP is:</p>
+
+      <h1 style="font-size:40px;letter-spacing:6px;color:#16a34a;">
+        ${otp}
+      </h1>
+
+      <p>This OTP is valid for <b>10 minutes</b>.</p>
+
+      <p>If you didn't request a password reset, ignore this email.</p>
+    `,
+    text: `Your password reset OTP is ${otp}.`,
   });
 }
 
 export async function sendSubscriptionEmail(user, subscription, event) {
   const messages = {
     activated: `Your ${subscription.plan} subscription is now active.`,
-    canceled: 'Your subscription will cancel at the end of the current billing period.',
-    lapsed: 'Your subscription has lapsed. Renew to continue entering draws.',
+    canceled: "Your subscription has been canceled.",
+    lapsed: "Your subscription has expired.",
   };
-  const text = messages[event] ?? 'Your subscription status has changed.';
+
   await sendEmail({
     to: user.email,
-    subject: `Fairway Forward — Subscription ${event}`,
-    html: `<p>Hi ${user.profile.firstName},</p><p>${text}</p>`,
-    text,
+    subject: `Subscription ${event}`,
+    html: `
+      <h2>Hi ${user.profile?.firstName || "there"},</h2>
+
+      <p>${messages[event]}</p>
+    `,
+    text: messages[event],
   });
 }
