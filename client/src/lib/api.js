@@ -1,4 +1,4 @@
-const API_BASE = 'https://fairchance-xb5r.onrender.com/api';
+const API_BASE = 'https://fairchance-1.onrender.com/api';
 
 export class ApiError extends Error {
   constructor(message, status, code) {
