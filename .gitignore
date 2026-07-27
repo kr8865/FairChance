@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+uploads/
+/Users/kratikaagrawal/Desktop/fair_c/server/.env
