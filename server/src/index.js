@@ -13,7 +13,7 @@ import { charityRouter } from "./routes/charity.js";
 const app = express();
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
-    origin: config.clientUrl,
+    origin: process.env.CLIENT_URL,
     credentials: true,
 }));
 app.use(cookieParser());
