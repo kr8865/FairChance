@@ -13,7 +13,9 @@ import { charityRouter } from "./routes/charity.js";
 const app = express();
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin:[ process.env.CLIENT_URL,
+        "https://fair-chance-client-git-main-kr8865s-projects.vercel.app/" ],
+
     credentials: true,
 }));
 app.use(cookieParser());
