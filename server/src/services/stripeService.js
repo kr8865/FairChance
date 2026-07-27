@@ -174,7 +174,11 @@ export async function cancelSubscription(userId) {
 
 export async function subscribeUser(userId, plan) {
   if (isStripeConfigured()) {
-    return createCheckoutSession(userId, plan);
+    try {
+      return await createCheckoutSession(userId, plan);
+    } catch (err) {
+      console.warn('[Stripe Checkout fallback] Could not create session:', err.message);
+    }
   }
   await activateDemoSubscription(userId, plan);
   const user = await User.findById(userId);

@@ -14,7 +14,7 @@ import {
 import { Layout } from '../components/Layout';
 import AuthLayout from '../components/AuthLayout';
 import { api } from '../lib/api';
-import { FloatingBlobs } from './LoginPage';
+import FloatingBlobs  from '../components/FloatingBobs';
 
 const STEPS = ['email', 'otp', 'password', 'done'];
 

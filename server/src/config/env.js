@@ -22,6 +22,8 @@ export const config = {
 
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
+  stripeMonthlyPriceId: process.env.STRIPE_MONTHLY_PRICE_ID || "price_monthly_demo",
+  stripeYearlyPriceId: process.env.STRIPE_YEARLY_PRICE_ID || "price_yearly_demo",
 
   uploadDir: process.env.UPLOAD_DIR || "uploads",
 

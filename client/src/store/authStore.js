@@ -23,6 +23,13 @@ export const useAuthStore = create((set) => ({
     set({ user: result.user, isLoading: false });
   },
 
+  googleLogin: async (googleData) => {
+    const data = await api.googleLogin(googleData);
+    setToken(data.accessToken);
+    set({ user: data.user, subscription: data.subscription ?? null, isLoading: false });
+    return data.user;
+  },
+
   logout: async () => {
     try {
       await api.logout();

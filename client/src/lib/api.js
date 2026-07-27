@@ -1,4 +1,4 @@
-const API_BASE = 'https://fairchance-xb5r.onrender.com/api';
+const API_BASE = '/api';
 
 export class ApiError extends Error {
   constructor(message, status, code) {
@@ -71,6 +71,11 @@ export async function apiFetch(path, options = {}) {
 
 export const api = {
   register: (body) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
+  sendRegisterOtp: (email) =>
+    apiFetch('/auth/send-register-otp', { method: 'POST', body: JSON.stringify({ email }) }),
+  verifyRegisterOtp: (email, otp) =>
+    apiFetch('/auth/verify-register-otp', { method: 'POST', body: JSON.stringify({ email, otp }) }),
+  googleLogin: (body) => apiFetch('/auth/google', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   logout: () => apiFetch('/auth/logout', { method: 'POST' }),
   forgotPassword: (body) =>

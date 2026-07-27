@@ -5,11 +5,19 @@ let transporter;
 
 function getTransporter() {
   if (!transporter) {
+    const user = process.env.GMAIL_USER?.trim();
+    const pass = process.env.GMAIL_APP_PASSWORD?.trim();
+
     transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // Use TLS/SSL
       auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
+        user,
+        pass,
+      },
+      tls: {
+        rejectUnauthorized: false,
       },
     });
   }
@@ -19,9 +27,6 @@ function getTransporter() {
 
 export async function sendEmail({ to, subject, html, text }) {
   try {
-    await getTransporter().verify();
-    console.log("✅ Gmail Connected");
-
     const info = await getTransporter().sendMail({
       from: config.emailFrom,
       to,
@@ -30,14 +35,30 @@ export async function sendEmail({ to, subject, html, text }) {
       text,
     });
 
-    console.log("✅ Email Sent:", info.response);
-
+    console.log("✅ Email Sent successfully to:", to, info.messageId);
     return info;
   } catch (err) {
-    console.error("❌ Email Error");
-    console.error(err);
+    console.error("❌ Email Error dispatching to:", to, err.message);
     throw err;
   }
+}
+
+export async function sendRegistrationOtpEmail(email, otp) {
+  await sendEmail({
+    to: email,
+    subject: "Verify Your Email - Fairway Forward",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+        <h2 style="color: #0f172a; margin-top: 0;">Welcome to Fairway Forward</h2>
+        <p style="color: #475569; font-size: 15px;">Your email verification code is:</p>
+        <div style="background-color: #f1f5f9; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;">
+          <span style="color: #16a34a; font-size: 36px; font-weight: bold; letter-spacing: 6px; font-family: monospace;">${otp}</span>
+        </div>
+        <p style="color: #64748b; font-size: 13px;">This code is valid for <strong>10 minutes</strong>. If you did not request this, please ignore this email.</p>
+      </div>
+    `,
+    text: `Your Fairway Forward registration OTP is ${otp}`,
+  });
 }
 
 export async function sendDrawResultsEmail(user, draw, winnings) {

@@ -20,7 +20,12 @@ import {
   resetPasswordWithToken,
 } from '../services/passwordResetService.js';
 
-import { authenticate, requireSubscription, signAccessToken } from '../middleware/auth.js';
+import {
+  requestRegistrationOtp,
+  verifyRegistrationOtp,
+} from '../services/registrationOtpService.js';
+
+import { authenticate, requireSubscription, signAccessToken, signRefreshToken } from '../middleware/auth.js';
 import { User } from '../models/User.js';
 import { Subscription } from '../models/Subscription.js';
 import { Charity } from '../models/Charity.js';
@@ -114,6 +119,84 @@ authRouter.post(
       user: result.user,
       accessToken: result.accessToken,
       subscription: result.subscription,
+    });
+  })
+);
+
+authRouter.post(
+  '/send-register-otp',
+  asyncHandler(async (req, res) => {
+    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+    const result = await requestRegistrationOtp(email);
+    res.json(result);
+  })
+);
+
+authRouter.post(
+  '/verify-register-otp',
+  asyncHandler(async (req, res) => {
+    const { email, otp } = z
+      .object({ email: z.string().email(), otp: z.string().length(6) })
+      .parse(req.body);
+    const result = await verifyRegistrationOtp(email, otp);
+    res.json(result);
+  })
+);
+
+authRouter.post(
+  '/google',
+  asyncHandler(async (req, res) => {
+    const { email, firstName, lastName, avatarUrl } = z
+      .object({
+        email: z.string().email(),
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        avatarUrl: z.string().optional(),
+      })
+      .parse(req.body);
+
+    const normalizedEmail = email.toLowerCase().trim();
+    let user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      const dummyPassword = await bcrypt.hash(crypto.randomUUID(), 12);
+      user = await User.create({
+        email: normalizedEmail,
+        passwordHash: dummyPassword,
+        profile: {
+          firstName: firstName || 'Golf',
+          lastName: lastName || 'Player',
+          avatarUrl,
+        },
+        emailVerified: true,
+      });
+      await Subscription.create({ userId: user._id, status: 'none', priceAmount: 999 });
+    } else {
+      if (avatarUrl && !user.profile.avatarUrl) {
+        user.profile.avatarUrl = avatarUrl;
+      }
+      user.emailVerified = true;
+      await user.save();
+    }
+
+    const accessToken = signAccessToken(user._id.toString(), user.role);
+    const refreshToken = signRefreshToken(user._id.toString());
+    user.refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+    await user.save();
+
+    const subscription = await Subscription.findOne({ userId: user._id });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      user: sanitizeUser(user),
+      accessToken,
+      subscription,
     });
   })
 );
