@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { registerUser, loginUser, sanitizeUser, getDashboardData, addScore, } from '../services/appService.js';
+import {
+    requestPasswordResetOtp,
+    verifyPasswordResetOtp,
+    resetPasswordWithToken,
+} from '../services/passwordResetService.js';
 import { authenticate, requireSubscription } from '../middleware/auth.js';
 import { User } from '../models/User.js';
 import { Subscription } from '../models/Subscription.js';
@@ -90,6 +95,44 @@ authRouter.post('/logout', authenticate, async (req, res) => {
     }
     res.clearCookie('refreshToken');
     res.json({ ok: true });
+});
+authRouter.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = z.object({ email: z.string().email() }).parse(req.body);
+        const result = await requestPasswordResetOtp(email);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : 'Request failed' });
+    }
+});
+authRouter.post('/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = z
+            .object({ email: z.string().email(), otp: z.string().length(6) })
+            .parse(req.body);
+        const result = await verifyPasswordResetOtp(email, otp);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : 'Verification failed' });
+    }
+});
+authRouter.post('/reset-password', async (req, res) => {
+    try {
+        const { email, resetToken, newPassword } = z
+            .object({
+            email: z.string().email(),
+            resetToken: z.string().min(1),
+            newPassword: z.string().min(8),
+        })
+            .parse(req.body);
+        const result = await resetPasswordWithToken(email, resetToken, newPassword);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : 'Reset failed' });
+    }
 });
 export const meRouter = Router();
 meRouter.use(authenticate);

@@ -5,6 +5,7 @@ import { useAuthStore } from './store/authStore';
 import { ProtectedRoute, AdminRoute, GuestRoute } from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import ForgotPassword from './pages/ForgotPassword';
 import RegisterPage from './pages/RegisterPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import CharitiesPage from './pages/CharitiesPage';
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/charities/:slug" element={<CharityDetailPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+            <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
             <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />

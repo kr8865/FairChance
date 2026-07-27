@@ -73,6 +73,11 @@ export const api = {
   register: (body) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   logout: () => apiFetch('/auth/logout', { method: 'POST' }),
+  forgotPassword: (body) =>
+    apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify(body) }),
+  verifyOtp: (body) => apiFetch('/auth/verify-otp', { method: 'POST', body: JSON.stringify(body) }),
+  resetPassword: (body) =>
+    apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
   getDashboard: () => apiFetch('/me'),
   updateProfile: (body) => apiFetch('/me', { method: 'PATCH', body: JSON.stringify(body) }),
   getScores: () => apiFetch('/scores'),

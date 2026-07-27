@@ -44,6 +44,12 @@ export default function LoginPage() {
     }
   };
 
+  // Handler to navigate programmatically and optionally pass email
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    navigate('/forgot-password', { state: { email } });
+  };
+
   return (
     <Layout>
       <div className="relative min-h-screen overflow-hidden bg-[#f7f8f3] text-slate-900">
@@ -90,9 +96,15 @@ export default function LoginPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-semibold text-slate-600">Password</label>
-                  <Link to="/forgot-password" className="text-xs font-semibold text-emerald-600 hover:underline">
+                  
+                  {/* Updated Link with handler to pre-fill email if typed */}
+                  <a
+                    href="/forgot-password"
+                    onClick={handleForgotPassword}
+                    className="text-xs font-semibold text-emerald-600 hover:underline cursor-pointer"
+                  >
                     Forgot password?
-                  </Link>
+                  </a>
                 </div>
                 <div className="relative">
                   <input

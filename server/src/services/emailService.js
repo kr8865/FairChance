@@ -73,6 +73,25 @@ export async function sendWinnerAlertEmail(user, winner) {
   });
 }
 
+export async function sendPasswordResetOtpEmail(user, otp) {
+  const subject = 'Your Fairway & Fund password reset code';
+  const html = `
+    <h2>Hi ${user.profile.firstName},</h2>
+    <p>Use the verification code below to reset your password. This code expires in 10 minutes.</p>
+    <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #059669;">${otp}</p>
+    <p>If you did not request a password reset, you can safely ignore this email.</p>
+    <p><a href="${config.clientUrl}/login">Return to sign in</a></p>
+  `;
+  const text = `Your password reset code is ${otp}. It expires in 10 minutes.`;
+
+  await sendEmail({
+    to: user.email,
+    subject,
+    html,
+    text,
+  });
+}
+
 export async function sendSubscriptionEmail(user, subscription, event) {
   const messages = {
     activated: `Your ${subscription.plan} subscription is now active.`,
