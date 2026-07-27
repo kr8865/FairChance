@@ -1,33 +1,19 @@
-import dotenv from "dotenv";
-
-dotenv.config();
-
 export const config = {
   port: Number(process.env.PORT) || 5001,
 
-  mongoUri:
-    process.env.MONGODB_URI ||
-    "mongodb://127.0.0.1:27017/fairway_forward",
+  mongoUri: process.env.MONGODB_URI,
 
-  jwtAccessSecret:
-    process.env.JWT_ACCESS_SECRET || "dev-access-secret",
+  jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
 
-  jwtRefreshSecret:
-    process.env.JWT_REFRESH_SECRET || "dev-refresh-secret",
+  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
 
-  accessTokenExpiry: "15m",
-  refreshTokenExpiry: "7d",
+  clientUrl: process.env.CLIENT_URL,
 
-  clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
+  brevoApiKey: process.env.BREVO_API_KEY,
 
-  stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
-  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
-  stripeMonthlyPriceId: process.env.STRIPE_MONTHLY_PRICE_ID || "price_monthly_demo",
-  stripeYearlyPriceId: process.env.STRIPE_YEARLY_PRICE_ID || "price_yearly_demo",
+  emailFrom: process.env.EMAIL_FROM,
+
+  emailFromName: process.env.EMAIL_FROM_NAME || "Fairway Forward",
 
   uploadDir: process.env.UPLOAD_DIR || "uploads",
-
-  emailFrom:
-    process.env.EMAIL_FROM ||
-    `"Fairway Forward" <${process.env.GMAIL_USER}>`,
 };

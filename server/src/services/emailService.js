@@ -1,49 +1,41 @@
-import nodemailer from "nodemailer";
+import axios from "axios";
 import { config } from "../config/env.js";
-
-let transporter;
-
-function getTransporter() {
-  if (!transporter) {
-    const user = process.env.GMAIL_USER?.trim();
-    const pass = process.env.GMAIL_APP_PASSWORD?.trim();
-
-    console.log("GMAIL_USER:", user);
-    console.log("Password Exists:", !!pass);
-
-    transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user,
-        pass,
-      },
-      connectionTimeout: 60000,
-      greetingTimeout: 60000,
-      socketTimeout: 60000,
-    });
-  }
-
-  return transporter;
-}
 
 export async function sendEmail({ to, subject, html, text }) {
   try {
-    // Verify SMTP connection
-    await getTransporter().verify();
-    console.log("✅ SMTP Connected");
+    const response = await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          name: config.emailFromName,
+          email: config.emailFrom,
+        },
+        to: [
+          {
+            email: to,
+          },
+        ],
+        subject,
+        htmlContent: html,
+        textContent: text,
+      },
+      {
+        headers: {
+          "api-key": config.brevoApiKey,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
 
-    const info = await getTransporter().sendMail({
-      from: config.emailFrom,
-      to,
-      subject,
-      html,
-      text,
-    });
+    console.log("✅ Email sent:", response.data);
 
-    console.log("✅ Email sent:", info.messageId);
-    return info;
+    return response.data;
   } catch (err) {
-    console.error("❌ Email Error:", err);
+    console.error(
+      "❌ Brevo Error:",
+      err.response?.data || err.message
+    );
     throw err;
   }
 }
@@ -54,12 +46,19 @@ export async function sendRegistrationOtpEmail(email, otp) {
     subject: "Verify Your Email - Fairway Forward",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-        <h2 style="color: #0f172a; margin-top: 0;">Welcome to Fairway Forward</h2>
-        <p style="color: #475569; font-size: 15px;">Your email verification code is:</p>
-        <div style="background-color: #f1f5f9; border-radius: 12px; padding: 16px; text-align: center; margin: 20px 0;">
-          <span style="color: #16a34a; font-size: 36px; font-weight: bold; letter-spacing: 6px; font-family: monospace;">${otp}</span>
+        <h2 style="color: #0f172a;">Welcome to Fairway Forward</h2>
+
+        <p>Your email verification code is:</p>
+
+        <div style="background:#f1f5f9;padding:18px;border-radius:12px;text-align:center;">
+          <span style="font-size:36px;font-weight:bold;color:#16a34a;letter-spacing:6px;">
+            ${otp}
+          </span>
         </div>
-        <p style="color: #64748b; font-size: 13px;">This code is valid for <strong>10 minutes</strong>. If you did not request this, please ignore this email.</p>
+
+        <p>This OTP is valid for <strong>10 minutes</strong>.</p>
+
+        <p>If you did not request this email, please ignore it.</p>
       </div>
     `,
     text: `Your Fairway Forward registration OTP is ${otp}`,
@@ -115,9 +114,7 @@ export async function sendWinnerAlertEmail(user, winner) {
     html: `
       <h2>Hello ${user.profile.firstName}</h2>
 
-      <p>
-        Congratulations!
-      </p>
+      <p>Congratulations!</p>
 
       <p>
         You won ${(winner.prizeAmount / 100).toFixed(2)} GBP
@@ -138,7 +135,6 @@ export async function sendPasswordResetOtpEmail(user, otp) {
     subject: "Password Reset OTP",
     html: `
       <div style="font-family:Arial;padding:20px">
-
         <h2>Hello ${user.profile.firstName}</h2>
 
         <p>Your password reset OTP is:</p>
@@ -161,7 +157,6 @@ export async function sendPasswordResetOtpEmail(user, otp) {
           If you did not request this,
           ignore this email.
         </p>
-
       </div>
     `,
     text: `Your OTP is ${otp}`,
