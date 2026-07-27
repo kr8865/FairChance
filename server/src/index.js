@@ -12,12 +12,23 @@ import { adminRouter } from './routes/admin.js';
 import { charityRouter } from "./routes/charity.js";
 const app = express();
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://fair-chance-client.vercel.app",
+];
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://fair-chance-client.vercel.app",
-    "https://fair-chance-client-git-main-kr8865s-projects.vercel.app"
-  ],
+  origin(origin, callback) {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith(".vercel.app")
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
   credentials: true,
 }));
 app.use(cookieParser());
